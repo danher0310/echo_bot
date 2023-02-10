@@ -1,4 +1,5 @@
-from telegram.ext import Application, CommandHandler, MessageHandler, filters 
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler 
+from telegram import  InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 import os
 import logging
@@ -6,6 +7,7 @@ import logging
 
 
 load_dotenv()
+input_state = 0
 
 async def start(update,context):
   user = update.effective_user  
@@ -13,11 +15,15 @@ async def start(update,context):
   
 async def processed_messages(update, context):
   print('test')
-  user = update.effective_user
-  mesg = update.message.text
+  # user = update.effective_user
+  # mesg = update.message.text
+  # print(update)
+  # print(user)
+  # print(mesg)
   print(update)
-  print(user)
-  print(mesg)
+  
+async def buttons_handler (update, context):
+  print(update)
   
 async def chatId(update,context):
     """Returns the chat id where the bot responds to"""
@@ -40,15 +46,23 @@ async def rules_group (update, context):
     else:
       userLastName=None
   mention = "["+userFirstName+"](tg://user?id="+str(userId)+")"  
+  # button1 = InlineKeyboardButton(
+  #   text="probando",
+  #   url="google.com"
+  # )
+  
   await context.bot.send_message (
     chat_id=chatId,
     parse_mode = "Markdown",
     text=f"""Welcome to *Iconicmind* {mention}
     Reglas: 
     1. No spamming""",
+    reply_markup=InlineKeyboardMarkup([
+      [InlineKeyboardButton(text="testing", callback_data="test1")],
+    ])
     
   )
-    
+  return input_state
     
   
   
@@ -62,7 +76,17 @@ def main():
   application.add_handler(CommandHandler('start', start))
   application.add_handler(CommandHandler('chat_id', chatId))
   application.add_handler(MessageHandler(filters.TEXT, processed_messages ))
-  application.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, rules_group ))
+  #application.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, rules_group ))
+  application.add_handler(ConversationHandler(
+    entry_points=[
+      MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, rules_group),
+      CallbackQueryHandler(pattern='test', callback=buttons_handler)
+    ],
+    states={
+      input_state:[MessageHandler(filters.TEXT, processed_messages )]
+      },
+    fallbacks=[]
+  ))
   application.add_handler
   print('Starting process')
   application.run_polling()
