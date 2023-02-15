@@ -36,14 +36,17 @@ def remove_user(tlgid):
   mycursor = mydb.cursor()
   try:
     print("entre en el try")
-    queryString = "DELETE FROM attendence WHERE ('tlg_id'= %s);"
-    value = tlgid
-    mycursor.execute(queryString, (value,))
+    queryString = "DELETE FROM attendence WHERE tlg_id= %s"
+    value = (tlgid,)
+    mycursor.execute(queryString, value)
     mydb.commit()
     mydb.close()
     return None
-  except OSError:    
+  except OSError:  
+    print(OSError)  
     return "We have a error remove the user in the system"
+  
   
    
     
+print(remove_user(6046882594))
