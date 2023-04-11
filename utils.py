@@ -28,14 +28,31 @@ def register_employe(tlgid, user_firstN, username, charge):
     mydb.commit()
     mydb.close()
     return None
-  except :
+  except OSError:
+    print(OSError)
     return "We have a error register you in the system"
+  
+def check_user(tlgid, user_firstN):
+  mydb = connectionDb()
+  mycursor = mydb.cursor()
+  try:
+    queryString = "SELECT * FROM attendence WHERE tlg_id = %s and name = %s"
+    values = (tlgid, user_firstN,)
+    mycursor.execute(queryString, values)
+    result = mycursor.fetchall()
+    return False if len(result) > 0 else "You need select a option to be register in the system"
+      
+  except OSError:
+    return "We had a erro checking your user"
+    
+    
+  
+
   
 def remove_user(tlgid):
   mydb = connectionDb()
   mycursor = mydb.cursor()
   try:
-    print("entre en el try")
     queryString = "DELETE FROM attendence WHERE tlg_id= %s"
     value = (tlgid,)
     mycursor.execute(queryString, value)
@@ -48,5 +65,18 @@ def remove_user(tlgid):
   
   
    
+def check_charge(tlgid):
+  mydb = connectionDb()
+  mycursor = mydb.cursor()
+  try:
+    queryString = "SELECT role from attendence WHERE tlg_id = %s"
+    values =  (tlgid,)
+    mycursor.execute(queryString, values)    
+    result = mycursor.fetchone()
+    return result[0]
     
-print(remove_user(6046882594))
+  except:
+    return ("Error")
+    
+  
+

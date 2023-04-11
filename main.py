@@ -9,26 +9,49 @@ import utils
 
 load_dotenv()
 input_state = 0
+Charge = 0
 
 async def start(update,context):
   user = update.effective_user  
   await update.message.reply_text(f"Greetings {user.username}!")
-  
-async def processed_messages(update, context):
-  print('test')
-  # user = update.effective_user
-  # mesg = update.message.text
-  # print(update)
-  # print(user)
-  # print(mesg)
-  #print(update)
-  
 
-  
 async def chatId(update,context):
     """Returns the chat id where the bot responds to"""
     chatId = update.message.chat.id
     await update.message.reply_text(chatId)
+  
+
+async def processed_messages(update, context):
+  msg_id = update.message.id 
+  msg = update.message.text
+  chat_id = update.message.chat.id  
+  user = update.effective_user    
+  check = utils.check_user(user.id, user.first_name)  
+  mention = "["+user.first_name+"](tg://user?id="+str(user.id)+")"   
+  if check:     
+    await context.bot.delete_message(chat_id = chat_id, message_id = msg_id)    
+    await context.bot.send_message (
+      chat_id=chat_id,
+      parse_mode = "Markdown",
+      text = f"""Hi {mention}, you must select a optiuon for your charge or yoy can't use this group"""
+    )
+  
+  charge = utils.check_charge(user.id)
+  #print(update)
+  print('from chat id', update.message.chat.id)
+  print('message id', update.message.message_id )
+  if charge == "other" or charge == "scans":
+    await context.bot.forward_message(
+      chat_id = os.getenv('chat_id_forward'),
+      from_chat_id =  update.message.chat.id,
+      message_id = update.message.message_id,
+    )
+    
+  
+  
+
+  
+
   
 async def rules_group (update, context):
   print('----entramos a rules---')
@@ -51,8 +74,13 @@ async def rules_group (update, context):
       ],
       [
         InlineKeyboardButton(text="Administration", callback_data="administration"),
-        InlineKeyboardButton(text="Other", callback_data="other")
+        InlineKeyboardButton(text="Tech", callback_data="tech")
       ],
+       [
+        InlineKeyboardButton(text="Developer", callback_data="developer"),
+        InlineKeyboardButton(text="Other", callback_data="other")
+        
+      ]
       
     ])
     
@@ -68,25 +96,26 @@ async def buttons_handler (update, context):
   user_firstN = update.callback_query.from_user.first_name
   user_lastN = None
   username = None
-  if update.callback_query.from_user.last_name:
-    user_lastN = update.callback_query.from_user.last_name
+  chat_id = update.callback_query
+  
+  
   if update.callback_query.from_user.username:
-    username = update.callback_query.from_user.username  
-  register = utils.register_employe(user_tlgid, user_firstN, username, charge)  
-  print(register)
+    username = update.callback_query.from_user.username 
+    
   query = update.callback_query
-  if register == None:    
-    # query.answer()
+  # if charge != 'otherhhh':
+  register = utils.register_employe(user_tlgid, user_firstN, username, charge)     
+  if register == None:        
     await query.message.edit_text(
       text="thanks you"
     )
   else: 
     await query.message.edit_text(
       text=register
-    )
-    
-  
+    )    
   return ConversationHandler.END
+  
+    
   
 async def remove_user(update, context):
   print("---- estamos en el remove----")
@@ -102,6 +131,10 @@ async def remove_user(update, context):
     text = f"I have a error tried to remove {mention}"
     await update.message.reply_text(text,parse_mode = "Markdown",)
     
+    
+async def charge(update, context): 
+  print("veamos")
+  print(update)
   
 def main():
 # Starting Bot
@@ -120,9 +153,13 @@ def main():
       CallbackQueryHandler(pattern='phones', callback=buttons_handler),
       CallbackQueryHandler(pattern='scans', callback=buttons_handler),
       CallbackQueryHandler(pattern='administration', callback=buttons_handler),
-      CallbackQueryHandler(pattern='other', callback=buttons_handler)
+      CallbackQueryHandler(pattern='tech', callback=buttons_handler),
+      CallbackQueryHandler(pattern='other', callback=buttons_handler),
+      CallbackQueryHandler(pattern='developer', callback=buttons_handler),
+     
       
     ],
+    
     states={
       input_state:
         [
@@ -130,8 +167,10 @@ def main():
           CallbackQueryHandler(pattern='phones', callback=buttons_handler),
           CallbackQueryHandler(pattern='scans', callback=buttons_handler),
           CallbackQueryHandler(pattern='administration', callback=buttons_handler),
-          CallbackQueryHandler(pattern='other', callback=buttons_handler)
-        ]
+          CallbackQueryHandler(pattern='tech', callback=buttons_handler),
+          CallbackQueryHandler(pattern='other', callback=buttons_handler),CallbackQueryHandler(pattern='developer', callback=buttons_handler),
+        ],
+      
       },
     fallbacks=[]
   ))
